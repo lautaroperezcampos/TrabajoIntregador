@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oficial de Tránsito</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="game-wrapper">
+    <canvas id="gameCanvas" width="900" height="600"></canvas>
+
+    <div id="hud" class="hud hidden">
+      <div>Personas salvadas: <span id="scoreText">0</span>/30</div>
+      <div>Vidas: <span id="livesText">5</span></div>
+      <div>Nivel: <span id="levelText">1</span></div>
+    </div>
+
+    <div id="menuScreen" class="overlay-screen">
+      <h1>Oficial de Tránsito</h1>
+      <p>Empuja a los peatones distraídos hacia la vereda antes de que los autos los atropellen.</p>
+      <button id="playButton">Play</button>
+      <button id="exitButton">Salir</button>
+    </div>
+
+    <div id="victoryScreen" class="overlay-screen hidden">
+      <h1>¡Nivel Superado!</h1>
+      <p>Puntaje: <span id="victoryScore">0</span></p>
+      <button id="nextLevelButton">Siguiente Nivel</button>
+      <button id="menuFromVictoryButton">Volver al Menú</button>
+    </div>
+
+    <div id="gameOverScreen" class="overlay-screen hidden">
+      <h1>GAME OVER</h1>
+      <p>Has perdido todas las vidas.</p>
+      <button id="retryButton">Reintentar</button>
+      <button id="menuFromGameOverButton">Volver al Menú</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
