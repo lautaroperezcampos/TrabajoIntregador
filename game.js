@@ -33,6 +33,8 @@ const ROAD_BOTTOM = HEIGHT * 0.72;
 const ROAD_HEIGHT = ROAD_BOTTOM - ROAD_TOP;
 const SIDEWALK_TOP = ROAD_TOP - 60;
 const SIDEWALK_BOTTOM = ROAD_BOTTOM + 60;
+const ROAD_SPRITE_Y = SIDEWALK_TOP;
+const ROAD_SPRITE_HEIGHT = SIDEWALK_BOTTOM - SIDEWALK_TOP;
 const LANE_Y_POSITIONS = [
   ROAD_TOP + ROAD_HEIGHT * 0.125,
   ROAD_TOP + ROAD_HEIGHT * 0.375,
@@ -45,6 +47,24 @@ let gameState = "menu";
 let score = 0;
 let lives = 5;
 let cars = [];
+const roadSprite = new Image();
+const grassSprite = new Image();
+const carSprite = new Image();
+let roadSpriteLoaded = false;
+let grassSpriteLoaded = false;
+let carSpriteLoaded = false;
+roadSprite.src = "Mapa/Calle.svg";
+grassSprite.src = "Mapa/Pasto.svg";
+carSprite.src = "Mapa/Auto.svg";
+roadSprite.onload = () => {
+  roadSpriteLoaded = true;
+};
+grassSprite.onload = () => {
+  grassSpriteLoaded = true;
+};
+carSprite.onload = () => {
+  carSpriteLoaded = true;
+};
 let pedestrians = [];
 let totalPedestriansSpawned = 0;
 let keys = {};
@@ -249,12 +269,21 @@ function updateTraffic(delta) {
 function drawBackground() {
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
+if (grassSpriteLoaded) {
+  ctx.drawImage(grassSprite, 0, 0, WIDTH, SIDEWALK_TOP);
+  ctx.drawImage(grassSprite, 0, SIDEWALK_BOTTOM, WIDTH, HEIGHT - SIDEWALK_BOTTOM);
+} else {
   ctx.fillStyle = "#3e5a42";
   ctx.fillRect(0, 0, WIDTH, SIDEWALK_TOP);
   ctx.fillRect(0, SIDEWALK_BOTTOM, WIDTH, HEIGHT - SIDEWALK_BOTTOM);
+}
 
-  ctx.fillStyle = "#2a2a2a";
-  ctx.fillRect(0, ROAD_TOP, WIDTH, ROAD_BOTTOM - ROAD_TOP);
+  if (roadSpriteLoaded) {
+    ctx.drawImage(roadSprite, 0, ROAD_SPRITE_Y, WIDTH, ROAD_SPRITE_HEIGHT);
+  } else {
+    ctx.fillStyle = "#2a2a2a";
+    ctx.fillRect(0, ROAD_TOP, WIDTH, ROAD_BOTTOM - ROAD_TOP);
+  }
 
   ctx.strokeStyle = "rgba(255,255,255,0.3)";
   ctx.lineWidth = 3;
@@ -315,14 +344,27 @@ function drawPedestrians() {
 }
 
 function drawCars() {
+  const spriteWidth = CAR_WIDTH;
+  const spriteHeight = CAR_HEIGHT;
+
   cars.forEach(car => {
-    ctx.fillStyle = "#d32f2f";
-    ctx.fillRect(car.x - car.width / 2, car.y - car.height / 2, car.width, car.height);
-    ctx.fillStyle = "#111";
-    ctx.beginPath();
-    ctx.arc(car.x - car.width * 0.3, car.y + car.height / 2, 6, 0, Math.PI * 2);
-    ctx.arc(car.x + car.width * 0.3, car.y + car.height / 2, 6, 0, Math.PI * 2);
-    ctx.fill();
+    if (carSpriteLoaded && carSprite.width > 0 && carSprite.height > 0) {
+      ctx.save();
+      ctx.translate(car.x, car.y);
+      if (car.direction === -1) {
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(carSprite, -spriteWidth / 2, -spriteHeight / 2, spriteWidth, spriteHeight);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "#d32f2f";
+      ctx.fillRect(car.x - car.width / 2, car.y - car.height / 2, car.width, car.height);
+      ctx.fillStyle = "#111";
+      ctx.beginPath();
+      ctx.arc(car.x - car.width * 0.3, car.y + car.height / 2, 6, 0, Math.PI * 2);
+      ctx.arc(car.x + car.width * 0.3, car.y + car.height / 2, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
   });
 }
 
