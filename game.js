@@ -5,6 +5,9 @@ const hud = document.getElementById("hud");
 const menuScreen = document.getElementById("menuScreen");
 const victoryScreen = document.getElementById("victoryScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
+const levelIntroScreen = document.getElementById("levelIntroScreen");
+const levelIntroTitle = document.getElementById("levelIntroTitle");
+const levelIntroText = document.getElementById("levelIntroText");
 
 const scoreText = document.getElementById("scoreText");
 const livesText = document.getElementById("livesText");
@@ -17,6 +20,7 @@ const nextLevelButton = document.getElementById("nextLevelButton");
 const menuFromVictoryButton = document.getElementById("menuFromVictoryButton");
 const retryButton = document.getElementById("retryButton");
 const menuFromGameOverButton = document.getElementById("menuFromGameOverButton");
+const startLevelButton = document.getElementById("startLevelButton");
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
@@ -27,6 +31,7 @@ const CAR_WIDTH = 72;
 const CAR_HEIGHT = 26;
 const BASE_CAR_SPEED = 60;
 const BASE_PEDESTRIAN_SPEED = 40;
+const ALERT_DISTANCE = 180;
 
 const ROAD_TOP = HEIGHT * 0.28;
 const ROAD_BOTTOM = HEIGHT * 0.72;
@@ -43,40 +48,47 @@ const LANE_Y_POSITIONS = [
 ];
 const LANE_DIRECTIONS = [-1, 1, -1, 1];
 
+const LEVEL_MESSAGES = {
+  1: "Cuidado con los autos, son pocos pero no te confíes.",
+  2: "Aumenta el tráfico. Mantente alerta.",
+  3: "Última prueba: 4 carriles activos. ¡Suerte, oficial!",
+};
+
 let gameState = "menu";
+let shakeTime = 0;
+const SHAKE_DURATION = 0.3;
+const SHAKE_MAGNITUDE = 8;
 let score = 0;
 let lives = 5;
 let cars = [];
+
 const roadSprite = new Image();
 const grassSprite = new Image();
 const carSprite = new Image();
 const playerSprite = new Image();
 const pedestrianSprite = new Image();
-let playerSpriteLoaded = false;
-let pedestrianSpriteLoaded = false;
-playerSprite.src = "Mapa/Policia.svg";
-pedestrianSprite.src = "Mapa/Peaton.svg";
-playerSprite.onload = () => {
-  playerSpriteLoaded = true;
-};
-pedestrianSprite.onload = () => {
-  pedestrianSpriteLoaded = true;
-};
+const alertSprite = new Image();
 let roadSpriteLoaded = false;
 let grassSpriteLoaded = false;
 let carSpriteLoaded = false;
+let playerSpriteLoaded = false;
+let pedestrianSpriteLoaded = false;
+let alertSpriteLoaded = false;
+
 roadSprite.src = "Mapa/Calle.svg";
 grassSprite.src = "Mapa/Pasto.svg";
 carSprite.src = "Mapa/Auto.svg";
-roadSprite.onload = () => {
-  roadSpriteLoaded = true;
-};
-grassSprite.onload = () => {
-  grassSpriteLoaded = true;
-};
-carSprite.onload = () => {
-  carSpriteLoaded = true;
-};
+playerSprite.src = "Mapa/Policia.svg";
+pedestrianSprite.src = "Mapa/Peaton.svg";
+alertSprite.src = "Mapa/ALERTA.svg";
+
+roadSprite.onload = () => { roadSpriteLoaded = true; };
+grassSprite.onload = () => { grassSpriteLoaded = true; };
+carSprite.onload = () => { carSpriteLoaded = true; };
+playerSprite.onload = () => { playerSpriteLoaded = true; };
+pedestrianSprite.onload = () => { pedestrianSpriteLoaded = true; };
+alertSprite.onload = () => { alertSpriteLoaded = true; };
+
 let pedestrians = [];
 let totalPedestriansSpawned = 0;
 let keys = {};
@@ -105,6 +117,7 @@ function resetGame(selectedLevel = 1) {
   lastFrameTime = 0;
   player.x = WIDTH / 2;
   player.y = HEIGHT / 2;
+  player.angle = 0;
   updateHud();
 }
 
@@ -112,14 +125,28 @@ function createPedestrians() {
   return Array.from({ length: 3 }, () => createPedestrian());
 }
 
+const SPAWN_SAFE_DISTANCE = 110; // qué tan lejos debe estar el auto más cercano de la columna elegida
+
+function isSpawnXSafe(x) {
+  return !cars.some(car => Math.abs(car.x - x) < SPAWN_SAFE_DISTANCE);
+}
+
 function createPedestrian() {
   const fromTop = Math.random() < 0.5;
+  let x = 80 + Math.random() * (WIDTH - 160);
+  let attempts = 0;
+  while (!isSpawnXSafe(x) && attempts < 15) {
+    x = 80 + Math.random() * (WIDTH - 160);
+    attempts += 1;
+  }
+
   return {
-    x: 80 + Math.random() * (WIDTH - 160),
+    x,
     y: fromTop ? SIDEWALK_TOP : SIDEWALK_BOTTOM,
     radius: PEDESTRIAN_RADIUS,
     direction: fromTop ? 1 : -1,
     status: "crossing",
+    pushed: false,
   };
 }
 
@@ -175,6 +202,7 @@ function showScreen(screen) {
   hud.classList.add("hidden");
   victoryScreen.classList.add("hidden");
   gameOverScreen.classList.add("hidden");
+  levelIntroScreen.classList.add("hidden");
 
   if (screen === "menu") {
     menuScreen.classList.remove("hidden");
@@ -184,7 +212,17 @@ function showScreen(screen) {
     victoryScreen.classList.remove("hidden");
   } else if (screen === "gameover") {
     gameOverScreen.classList.remove("hidden");
+  } else if (screen === "levelIntro") {
+    levelIntroScreen.classList.remove("hidden");
   }
+}
+
+function showLevelIntro(selectedLevel) {
+  level = selectedLevel;
+  levelIntroTitle.textContent = "Nivel " + selectedLevel;
+  levelIntroText.textContent = LEVEL_MESSAGES[selectedLevel] || "";
+  gameState = "levelIntro";
+  showScreen("levelIntro");
 }
 
 function startGame(selectedLevel = 1) {
@@ -195,12 +233,16 @@ function startGame(selectedLevel = 1) {
 }
 
 function endGame(victory) {
+  if (victory && level < 3) {
+    showLevelIntro(level + 1);
+    return;
+  }
   gameState = victory ? "victory" : "gameover";
   showScreen(gameState);
   if (victory) {
     victoryScore.textContent = score;
   }
-}4
+}
 
 function updatePlayer(delta) {
   let dx = 0;
@@ -225,24 +267,24 @@ function updatePedestrians(delta) {
   pedestrians.forEach(ped => {
     if (ped.status !== "crossing") return;
 
-    ped.y += ped.direction * (BASE_PEDESTRIAN_SPEED + level * 10) * delta;
+    const speed = BASE_PEDESTRIAN_SPEED + level * 10;
+    const pushMultiplier = ped.pushed ? 2.2 : 1;
+    ped.y += ped.direction * speed * pushMultiplier * delta;
 
-    if (ped.y <= SIDEWALK_TOP) {
+    if (ped.y <= SIDEWALK_TOP || ped.y >= SIDEWALK_BOTTOM) {
       ped.status = "safe";
-      ped.remove = true;
-    }
-
-    if (ped.y >= SIDEWALK_BOTTOM) {
-      ped.status = "safe";
-      ped.remove = true;
-    }
-
-    const playerDist = Math.hypot(player.x - ped.x, player.y - ped.y);
-    if (playerDist <= player.radius + ped.radius) {
-      ped.status = "saved";
       ped.remove = true;
       score += 1;
     }
+
+  if (!ped.pushed) {
+  const playerDist = Math.hypot(player.x - ped.x, player.y - ped.y);
+  if (playerDist <= player.radius + ped.radius) {
+    ped.pushed = true;
+    // Math.sin(player.angle) > 0 significa que el policía mira hacia abajo
+    ped.direction = Math.sin(player.angle) > 0 ? 1 : -1;
+  }
+}
   });
 
   pedestrians = pedestrians.filter(ped => !ped.remove);
@@ -270,14 +312,15 @@ function updateCars(delta) {
       }
     });
 
-    if (!car.collided) {
-      const dx = Math.abs(car.x - player.x);
-      const dy = Math.abs(car.y - player.y);
-      if (dx < car.width / 2 && dy < car.height / 2 + player.radius) {
-        car.collided = true;
-        lives -= 1;
-      }
-    }
+  if (!car.collided) {
+  const dx = Math.abs(car.x - player.x);
+  const dy = Math.abs(car.y - player.y);
+  if (dx < car.width / 2 && dy < car.height / 2 + player.radius) {
+    car.collided = true;
+    lives -= 1;
+    shakeTime = SHAKE_DURATION;
+  }
+}
   });
 
   cars = cars.filter(car => !car.remove);
@@ -288,17 +331,27 @@ function updateTraffic(delta) {
   updateCars(delta);
 }
 
+function isCarApproaching(ped) {
+  return cars.some(car => {
+    if (Math.abs(car.y - ped.y) > 20) return false;
+    const dx = car.x - ped.x;
+    const approaching = (car.direction === 1 && dx < 0 && dx > -ALERT_DISTANCE) ||
+                         (car.direction === -1 && dx > 0 && dx < ALERT_DISTANCE);
+    return approaching;
+  });
+}
+
 function drawBackground() {
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-if (grassSpriteLoaded) {
-  ctx.drawImage(grassSprite, 0, 0, WIDTH, SIDEWALK_TOP);
-  ctx.drawImage(grassSprite, 0, SIDEWALK_BOTTOM, WIDTH, HEIGHT - SIDEWALK_BOTTOM);
-} else {
-  ctx.fillStyle = "#3e5a42";
-  ctx.fillRect(0, 0, WIDTH, SIDEWALK_TOP);
-  ctx.fillRect(0, SIDEWALK_BOTTOM, WIDTH, HEIGHT - SIDEWALK_BOTTOM);
-}
+  if (grassSpriteLoaded) {
+    ctx.drawImage(grassSprite, 0, 0, WIDTH, SIDEWALK_TOP);
+    ctx.drawImage(grassSprite, 0, SIDEWALK_BOTTOM, WIDTH, HEIGHT - SIDEWALK_BOTTOM);
+  } else {
+    ctx.fillStyle = "#3e5a42";
+    ctx.fillRect(0, 0, WIDTH, SIDEWALK_TOP);
+    ctx.fillRect(0, SIDEWALK_BOTTOM, WIDTH, HEIGHT - SIDEWALK_BOTTOM);
+  }
 
   if (roadSpriteLoaded) {
     ctx.drawImage(roadSprite, 0, ROAD_SPRITE_Y, WIDTH, ROAD_SPRITE_HEIGHT);
@@ -345,7 +398,7 @@ function drawPlayer() {
   if (playerSpriteLoaded) {
     ctx.save();
     ctx.translate(player.x, player.y);
-    ctx.rotate(player.angle + Math.PI / 2); // +90° si el sprite por defecto mira "hacia arriba"
+    ctx.rotate(player.angle + Math.PI / 2);
     ctx.drawImage(playerSprite, -size / 2, -size / 2, size, size);
     ctx.restore();
   } else {
@@ -368,10 +421,8 @@ function drawPedestrians() {
       ctx.save();
       ctx.translate(person.x, person.y);
       if (person.direction === 1) {
-  ctx.scale(1, -1);
-} 
-       
-
+        ctx.scale(1, -1);
+      }
       ctx.drawImage(pedestrianSprite, -size / 2, -size / 2, size, size);
       ctx.restore();
     } else {
@@ -383,6 +434,11 @@ function drawPedestrians() {
       ctx.font = "bold 16px Arial";
       ctx.textAlign = "center";
       ctx.fillText("🚶", person.x, person.y + 6);
+    }
+
+    if (alertSpriteLoaded && isCarApproaching(person)) {
+      const alertSize = 24;
+      ctx.drawImage(alertSprite, person.x - alertSize / 2, person.y - size - alertSize, alertSize, alertSize);
     }
   });
 }
@@ -413,10 +469,19 @@ function drawCars() {
 }
 
 function draw() {
+  ctx.save();
+  if (shakeTime > 0) {
+    const offsetX = (Math.random() - 0.5) * SHAKE_MAGNITUDE;
+    const offsetY = (Math.random() - 0.5) * SHAKE_MAGNITUDE;
+    ctx.translate(offsetX, offsetY);
+  }
+
   drawBackground();
   drawPedestrians();
   drawPlayer();
   drawCars();
+
+  ctx.restore();
 }
 
 function gameLoop(timestamp) {
@@ -427,6 +492,7 @@ function gameLoop(timestamp) {
   updatePlayer(delta);
   updateTraffic(delta);
 
+  shakeTime = Math.max(0, shakeTime - delta);
   trafficCooldown -= delta;
   const activeLanes = getActiveLaneCount();
   if (trafficCooldown <= 0 && cars.length < activeLanes) {
@@ -468,12 +534,12 @@ window.addEventListener("keyup", (event) => {
   keys[event.key] = false;
 });
 
-playButton.addEventListener("click", () => startGame(1));
+playButton.addEventListener("click", () => showLevelIntro(1));
 exitButton.addEventListener("click", () => {
   window.close();
   alert("Cierra la pestaña para salir del juego.");
 });
-nextLevelButton.addEventListener("click", () => startGame(level + 1));
+nextLevelButton.addEventListener("click", () => showLevelIntro(level + 1));
 menuFromVictoryButton.addEventListener("click", () => {
   gameState = "menu";
   showScreen("menu");
@@ -483,5 +549,6 @@ menuFromGameOverButton.addEventListener("click", () => {
   gameState = "menu";
   showScreen("menu");
 });
+startLevelButton.addEventListener("click", () => startGame(level));
 
 showScreen("menu");
