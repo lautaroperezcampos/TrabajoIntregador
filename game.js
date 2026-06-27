@@ -50,6 +50,18 @@ let cars = [];
 const roadSprite = new Image();
 const grassSprite = new Image();
 const carSprite = new Image();
+const playerSprite = new Image();
+const pedestrianSprite = new Image();
+let playerSpriteLoaded = false;
+let pedestrianSpriteLoaded = false;
+playerSprite.src = "Mapa/Policia.svg";
+pedestrianSprite.src = "Mapa/Peaton.svg";
+playerSprite.onload = () => {
+  playerSpriteLoaded = true;
+};
+pedestrianSprite.onload = () => {
+  pedestrianSpriteLoaded = true;
+};
 let roadSpriteLoaded = false;
 let grassSpriteLoaded = false;
 let carSpriteLoaded = false;
@@ -78,6 +90,7 @@ const player = {
   y: HEIGHT / 2,
   radius: PLAYER_RADIUS,
   speed: 260,
+  angle: 0,
 };
 
 function resetGame(selectedLevel = 1) {
@@ -187,13 +200,22 @@ function endGame(victory) {
   if (victory) {
     victoryScore.textContent = score;
   }
-}
+}4
 
 function updatePlayer(delta) {
-  if (keys.ArrowUp || keys.w) player.y -= player.speed * delta;
-  if (keys.ArrowDown || keys.s) player.y += player.speed * delta;
-  if (keys.ArrowLeft || keys.a) player.x -= player.speed * delta;
-  if (keys.ArrowRight || keys.d) player.x += player.speed * delta;
+  let dx = 0;
+  let dy = 0;
+  if (keys.ArrowUp || keys.w) dy -= 1;
+  if (keys.ArrowDown || keys.s) dy += 1;
+  if (keys.ArrowLeft || keys.a) dx -= 1;
+  if (keys.ArrowRight || keys.d) dx += 1;
+
+  if (dx !== 0 || dy !== 0) {
+    player.angle = Math.atan2(dy, dx);
+    const length = Math.hypot(dx, dy);
+    player.x += (dx / length) * player.speed * delta;
+    player.y += (dy / length) * player.speed * delta;
+  }
 
   player.x = Math.max(player.radius, Math.min(WIDTH - player.radius, player.x));
   player.y = Math.max(player.radius, Math.min(HEIGHT - player.radius, player.y));
@@ -319,27 +341,49 @@ if (grassSpriteLoaded) {
 }
 
 function drawPlayer() {
-  ctx.fillStyle = "#1e5aff";
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#fff";
-  ctx.beginPath();
-  ctx.arc(player.x - 6, player.y - 4, 4, 0, Math.PI * 2);
-  ctx.arc(player.x + 6, player.y - 4, 4, 0, Math.PI * 2);
-  ctx.fill();
+  const size = 30;
+  if (playerSpriteLoaded) {
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle + Math.PI / 2); // +90° si el sprite por defecto mira "hacia arriba"
+    ctx.drawImage(playerSprite, -size / 2, -size / 2, size, size);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = "#1e5aff";
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(player.x - 6, player.y - 4, 4, 0, Math.PI * 2);
+    ctx.arc(player.x + 6, player.y - 4, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 function drawPedestrians() {
+  const size = 30;
   pedestrians.forEach(person => {
-    ctx.fillStyle = "#f6bc55";
-    ctx.beginPath();
-    ctx.arc(person.x, person.y, person.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 16px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("🚶", person.x, person.y + 6);
+    if (pedestrianSpriteLoaded) {
+      ctx.save();
+      ctx.translate(person.x, person.y);
+      if (person.direction === 1) {
+  ctx.scale(1, -1);
+} 
+       
+
+      ctx.drawImage(pedestrianSprite, -size / 2, -size / 2, size, size);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "#f6bc55";
+      ctx.beginPath();
+      ctx.arc(person.x, person.y, person.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 16px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("🚶", person.x, person.y + 6);
+    }
   });
 }
 
