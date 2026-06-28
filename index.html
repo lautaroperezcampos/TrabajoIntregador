@@ -22,13 +22,23 @@
       <button id="playButton">Play</button>
       <button id="exitButton">Salir</button>
     </div>
+    
+  <div id="tutorialScreen" class="overlay-screen hidden">
+  <h1>Cómo jugar</h1>
+  <p>Movete con las flechas o WASD.</p>
+  <p>Acercate a un peatón en peligro y tocalo para empujarlo hacia la vereda más cercana, según hacia dónde estés mirando.</p>
+  <p>Evitá que los autos te choquen a vos o a los peatones.</p>
+  <p>Salvá suficientes peatones en cada nivel para avanzar.</p>
+  <button id="startTutorialButton">Entendido</button>
+</div>
 
-    <div id="victoryScreen" class="overlay-screen hidden">
-      <h1>¡Nivel Superado!</h1>
-      <p>Puntaje: <span id="victoryScore">0</span></p>
-      <button id="nextLevelButton">Siguiente Nivel</button>
-      <button id="menuFromVictoryButton">Volver al Menú</button>
-    </div>
+<div id="victoryScreen" class="overlay-screen hidden">
+  <h1>Juego Terminado</h1>
+  <p>Salvaste a todos los peatones.</p>
+  <p>Puntaje: <span id="victoryScore">0</span></p>
+  <button id="nextLevelButton">Siguiente Nivel</button>
+  <button id="menuFromVictoryButton">Volver al Menú</button>
+</div>
 
     <div id="gameOverScreen" class="overlay-screen hidden">
       <h1>GAME OVER</h1>

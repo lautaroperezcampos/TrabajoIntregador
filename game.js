@@ -8,6 +8,7 @@ const gameOverScreen = document.getElementById("gameOverScreen");
 const levelIntroScreen = document.getElementById("levelIntroScreen");
 const levelIntroTitle = document.getElementById("levelIntroTitle");
 const levelIntroText = document.getElementById("levelIntroText");
+const tutorialScreen = document.getElementById("tutorialScreen");
 
 const scoreText = document.getElementById("scoreText");
 const livesText = document.getElementById("livesText");
@@ -21,6 +22,7 @@ const menuFromVictoryButton = document.getElementById("menuFromVictoryButton");
 const retryButton = document.getElementById("retryButton");
 const menuFromGameOverButton = document.getElementById("menuFromGameOverButton");
 const startLevelButton = document.getElementById("startLevelButton");
+const startTutorialButton = document.getElementById("startTutorialButton");
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
@@ -68,12 +70,15 @@ const carSprite = new Image();
 const playerSprite = new Image();
 const pedestrianSprite = new Image();
 const alertSprite = new Image();
+const barrierSprite = new Image();
+
 let roadSpriteLoaded = false;
 let grassSpriteLoaded = false;
 let carSpriteLoaded = false;
 let playerSpriteLoaded = false;
 let pedestrianSpriteLoaded = false;
 let alertSpriteLoaded = false;
+let barrierSpriteLoaded = false;
 
 roadSprite.src = "Mapa/Calle.svg";
 grassSprite.src = "Mapa/Pasto.svg";
@@ -81,6 +86,7 @@ carSprite.src = "Mapa/Auto.svg";
 playerSprite.src = "Mapa/Policia.svg";
 pedestrianSprite.src = "Mapa/Peaton.svg";
 alertSprite.src = "Mapa/ALERTA.svg";
+barrierSprite.src = "Mapa/Vaya.svg";
 
 roadSprite.onload = () => { roadSpriteLoaded = true; };
 grassSprite.onload = () => { grassSpriteLoaded = true; };
@@ -88,6 +94,8 @@ carSprite.onload = () => { carSpriteLoaded = true; };
 playerSprite.onload = () => { playerSpriteLoaded = true; };
 pedestrianSprite.onload = () => { pedestrianSpriteLoaded = true; };
 alertSprite.onload = () => { alertSpriteLoaded = true; };
+barrierSprite.onload = () => { barrierSpriteLoaded = true; };
+
 
 let pedestrians = [];
 let totalPedestriansSpawned = 0;
@@ -203,6 +211,7 @@ function showScreen(screen) {
   victoryScreen.classList.add("hidden");
   gameOverScreen.classList.add("hidden");
   levelIntroScreen.classList.add("hidden");
+  tutorialScreen.classList.add("hidden");
 
   if (screen === "menu") {
     menuScreen.classList.remove("hidden");
@@ -214,6 +223,8 @@ function showScreen(screen) {
     gameOverScreen.classList.remove("hidden");
   } else if (screen === "levelIntro") {
     levelIntroScreen.classList.remove("hidden");
+  } else if (screen === "tutorial") {
+    tutorialScreen.classList.remove("hidden");
   }
 }
 
@@ -241,6 +252,7 @@ function endGame(victory) {
   showScreen(gameState);
   if (victory) {
     victoryScore.textContent = score;
+    nextLevelButton.classList.toggle("hidden", level >= 3);
   }
 }
 
@@ -359,6 +371,7 @@ function drawBackground() {
     ctx.fillStyle = "#2a2a2a";
     ctx.fillRect(0, ROAD_TOP, WIDTH, ROAD_BOTTOM - ROAD_TOP);
   }
+  
 
   ctx.strokeStyle = "rgba(255,255,255,0.3)";
   ctx.lineWidth = 3;
@@ -372,25 +385,30 @@ function drawBackground() {
   }
   ctx.setLineDash([]);
 
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
+ctx.fillStyle = "#ffd84d";
+LANE_Y_POSITIONS.forEach(laneY => {
   for (let x = 0; x < WIDTH; x += 90) {
-    ctx.fillRect(x + 10, ROAD_TOP + ROAD_HEIGHT * 0.15, 60, 8);
-    ctx.fillRect(x + 10, ROAD_TOP + ROAD_HEIGHT * 0.35, 60, 8);
-    ctx.fillRect(x + 10, ROAD_TOP + ROAD_HEIGHT * 0.55, 60, 8);
-    ctx.fillRect(x + 10, ROAD_TOP + ROAD_HEIGHT * 0.75, 60, 8);
+    ctx.fillRect(x + 20, laneY - 3, 35, 6);
   }
+});
 
-  const lanes = getLaneDefinitions();
-  lanes.forEach(lane => {
-    if (lane.open) return;
+const lanes = getLaneDefinitions();
+lanes.forEach(lane => {
+  if (lane.open) return;
 
-    const barrierWidth = 20;
-    const barrierHeight = 16;
-    const gap = 8;
+const barrierWidth = 40;
+const barrierHeight = 50;
+  const gap = 4;
+
+  if (barrierSpriteLoaded) {
+    ctx.drawImage(barrierSprite, gap, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
+    ctx.drawImage(barrierSprite, WIDTH - gap - barrierWidth, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
+  } else {
     ctx.fillStyle = "#fff";
     ctx.fillRect(gap, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
     ctx.fillRect(WIDTH - gap - barrierWidth, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
-  });
+  }
+});
 }
 
 function drawPlayer() {
@@ -533,8 +551,11 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("keyup", (event) => {
   keys[event.key] = false;
 });
-
-playButton.addEventListener("click", () => showLevelIntro(1));
+startTutorialButton.addEventListener("click", () => showLevelIntro(1));
+playButton.addEventListener("click", () => {
+  gameState = "tutorial";
+  showScreen("tutorial");
+});
 exitButton.addEventListener("click", () => {
   window.close();
   alert("Cierra la pestaña para salir del juego.");

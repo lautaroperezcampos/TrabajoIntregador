@@ -1,51 +1,66 @@
-# Oficial de Tránsito
+# Salvador de Tránsito
 
-Juego 2D donde el jugador controla a un policía que debe empujar peatones distraídos hacia la vereda antes de que los autos los atropellen.
+Estudiante: Lautaro Perez Campos
 
-## Contenido del proyecto
+## Descripción breve
 
-- `index.html` - interfaz principal del juego y pantallas de menú.
-- `styles.css` - estilos para el canvas, HUD y pantallas de menú.
-- `game.js` - lógica del juego, movimiento del jugador, autos, peatones y condiciones de victoria/derrota.
+Salvador de Tránsito es un juego del navegador en el que controlás a un oficial de tránsito que debe evitar que peatones distraídos sean atropellados mientras cruzan una avenida. La única forma de salvarlos es empujarlos rápidamente hacia la vereda más cercana antes de que un auto los alcance.
 
-## Mecánica implementada
+## "Está mal, pero no tan mal"
 
-- Menú principal con botón `Play` y `Salir`.
-- El jugador controla a un policía azul usando las teclas `WASD` o las flechas.
-- Los peatones aparecen en la vereda y cruzan la avenida lentamente.
-- **4 carriles de circulación** con sentidos alterados:
-  - Carriles 1 y 3: circulan derecha → izquierda
-  - Carriles 2 y 4: circulan izquierda → derecha
-- Los carriles cerrados (según el nivel) muestran barreras blancas.
-- Los autos representan peligro tanto para el policía como para los peatones.
+A simple vista, empujar a una persona está mal. Sin embargo, en el contexto del juego, ese empujón es lo que evita que el peatón sea atropellado por un auto. La acción que parece incorrecta termina siendo la que salva una vida, planteando que el contexto puede justificar una acción que de otra forma sería negativa.
 
-## Niveles y Progresión
+## Controles
 
-- **Nivel 1:** Solo 2 carriles activos, autos lentos.
-- **Nivel 2:** 3 carriles activos, autos más rápidos.
-- **Nivel 3:** 4 carriles activos, autos muy rápidos.
+- Flechas direccionales o **W A S D** para mover al oficial de tránsito.
+- Acercarse y tocar a un peatón en peligro lo empuja automáticamente hacia la vereda más cercana, en la dirección hacia la que esté mirando el oficial.
 
-## Cómo ganar/perder
+## Objetivo del juego
 
-- **Victoria:** Salvar al menos 50 peatones.
-- **Derrota:** Perder todas las vidas O no lograr salvar 50 peatones antes de que se agoten los peatones disponibles.
+Salvar la cantidad mínima de peatones requerida en cada nivel, evitando ser atropellado, para avanzar y completar los 3 niveles con al menos una vida restante.
 
-## Cómo jugar
+## Mecánicas principales
 
-1. Abre `index.html` en un navegador web compatible.
-2. Presiona `Play` para comenzar.
-3. Mueve al policía con `WASD` o las flechas.
-4. Toca a un peatón para empujarlo a la vereda y salvarlo.
-5. Evita los autos para no perder vidas.
-6. Consigue 50 personas salvadas para ganar el nivel.
+- Movimiento libre del personaje en las 4 direcciones, con rotación del sprite según hacia dónde mira.
+- Empuje de peatones: al tocarlos, se aceleran hacia la vereda más cercana en la dirección en la que el oficial está mirando.
+- Tráfico de autos en distintos carriles, con direcciones alternadas.
+- Alerta visual sobre el peatón cuando un auto se acerca por su carril, dando tiempo al jugador para reaccionar.
+- Camera shake al chocar con un auto.
+- Sistema de vidas y puntaje, con HUD visible durante la partida.
+- Pantallas separadas para menú, tutorial, intro de cada nivel, victoria y game over.
 
-## Dependencias
+## Niveles
 
-No requiere instalación adicional. Solo necesitas un navegador web.
+**Nivel 1:** Avenida con 2 carriles activos. Tráfico reducido para introducir la mecánica de empuje.
 
-## Próximas mejoras posibles
+**Nivel 2:** La misma avenida, ahora con 3 carriles activos y mayor frecuencia de aparición de autos y peatones.
 
-- Animaciones más elaboradas para peatones y autos.
-- Sonidos y efectos de audio.
-- Sprites más realistas en lugar de círculos.
-- Power-ups especiales.
+**Nivel 3:** Avenida completa con los 4 carriles activos, tráfico en ambos sentidos simultáneamente.
+
+## Suman puntos
+
+- Cada peatón que llega sano a la vereda.
+
+## Restan vidas
+
+- Ser golpeado por un auto.
+- Que un peatón sea atropellado mientras cruza.
+
+## Funcionamiento de los NPCs
+
+Los peatones aparecen en posiciones aleatorias sobre la vereda (superior o inferior) y cruzan la calle en línea recta hacia el otro lado. Si el oficial los toca, cambian de comportamiento: se aceleran y son redirigidos hacia la vereda más cercana, en la dirección hacia la que el oficial está mirando en ese momento. Si no son empujados a tiempo y un auto los alcanza, se pierden y se resta una vida. El sistema evita generar peatones en columnas donde un auto esté pasando demasiado cerca, para que siempre sea posible reaccionar.
+
+## Instrucciones para ejecutar el juego localmente
+
+1. Descargar o clonar la carpeta del proyecto.
+2. Abrir la carpeta en Visual Studio Code (o el editor de preferencia).
+3. Abrir `index.html` con una extensión de servidor local (por ejemplo, Live Server en VS Code) para evitar problemas de carga de los sprites SVG.
+4. El juego se abre en el navegador y se controla con el teclado.
+
+## Tecnologías utilizadas
+
+- HTML5 (estructura y pantallas del juego)
+- CSS3 (estilos visuales)
+- JavaScript (lógica del juego, sin librerías externas)
+- Canvas API (renderizado gráfico)
+- SVG (sprites e ilustraciones del juego, creados en Illustrator)
