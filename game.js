@@ -34,6 +34,7 @@ const CAR_HEIGHT = 26;
 const BASE_CAR_SPEED = 60;
 const BASE_PEDESTRIAN_SPEED = 40;
 const ALERT_DISTANCE = 180;
+const SPAWN_SAFE_DISTANCE = 110;
 
 const ROAD_TOP = HEIGHT * 0.28;
 const ROAD_BOTTOM = HEIGHT * 0.72;
@@ -96,7 +97,6 @@ pedestrianSprite.onload = () => { pedestrianSpriteLoaded = true; };
 alertSprite.onload = () => { alertSpriteLoaded = true; };
 barrierSprite.onload = () => { barrierSpriteLoaded = true; };
 
-
 let pedestrians = [];
 let totalPedestriansSpawned = 0;
 let keys = {};
@@ -133,8 +133,6 @@ function createPedestrians() {
   return Array.from({ length: 3 }, () => createPedestrian());
 }
 
-const SPAWN_SAFE_DISTANCE = 110; // qué tan lejos debe estar el auto más cercano de la columna elegida
-
 function isSpawnXSafe(x) {
   return !cars.some(car => Math.abs(car.x - x) < SPAWN_SAFE_DISTANCE);
 }
@@ -150,7 +148,7 @@ function createPedestrian() {
 
   return {
     x,
-    y: fromTop ? SIDEWALK_TOP : SIDEWALK_BOTTOM,
+    y: fromTop ? SIDEWALK_TOP + 1 : SIDEWALK_BOTTOM - 1,
     radius: PEDESTRIAN_RADIUS,
     direction: fromTop ? 1 : -1,
     status: "crossing",
@@ -289,14 +287,14 @@ function updatePedestrians(delta) {
       score += 1;
     }
 
-  if (!ped.pushed) {
-  const playerDist = Math.hypot(player.x - ped.x, player.y - ped.y);
-  if (playerDist <= player.radius + ped.radius) {
-    ped.pushed = true;
-    // Math.sin(player.angle) > 0 significa que el policía mira hacia abajo
-    ped.direction = Math.sin(player.angle) > 0 ? 1 : -1;
-  }
-}
+    if (!ped.pushed) {
+      const playerDist = Math.hypot(player.x - ped.x, player.y - ped.y);
+      if (playerDist <= player.radius + ped.radius) {
+        ped.pushed = true;
+        // Math.sin(player.angle) > 0 significa que el policía mira hacia abajo
+        ped.direction = Math.sin(player.angle) > 0 ? 1 : -1;
+      }
+    }
   });
 
   pedestrians = pedestrians.filter(ped => !ped.remove);
@@ -324,15 +322,15 @@ function updateCars(delta) {
       }
     });
 
-  if (!car.collided) {
-  const dx = Math.abs(car.x - player.x);
-  const dy = Math.abs(car.y - player.y);
-  if (dx < car.width / 2 && dy < car.height / 2 + player.radius) {
-    car.collided = true;
-    lives -= 1;
-    shakeTime = SHAKE_DURATION;
-  }
-}
+    if (!car.collided) {
+      const dx = Math.abs(car.x - player.x);
+      const dy = Math.abs(car.y - player.y);
+      if (dx < car.width / 2 && dy < car.height / 2 + player.radius) {
+        car.collided = true;
+        lives -= 1;
+        shakeTime = SHAKE_DURATION;
+      }
+    }
   });
 
   cars = cars.filter(car => !car.remove);
@@ -371,7 +369,6 @@ function drawBackground() {
     ctx.fillStyle = "#2a2a2a";
     ctx.fillRect(0, ROAD_TOP, WIDTH, ROAD_BOTTOM - ROAD_TOP);
   }
-  
 
   ctx.strokeStyle = "rgba(255,255,255,0.3)";
   ctx.lineWidth = 3;
@@ -385,30 +382,30 @@ function drawBackground() {
   }
   ctx.setLineDash([]);
 
-ctx.fillStyle = "#ffd84d";
-LANE_Y_POSITIONS.forEach(laneY => {
-  for (let x = 0; x < WIDTH; x += 90) {
-    ctx.fillRect(x + 20, laneY - 3, 35, 6);
-  }
-});
+  ctx.fillStyle = "#ffd84d";
+  LANE_Y_POSITIONS.forEach(laneY => {
+    for (let x = 0; x < WIDTH; x += 90) {
+      ctx.fillRect(x + 20, laneY - 3, 35, 6);
+    }
+  });
 
-const lanes = getLaneDefinitions();
-lanes.forEach(lane => {
-  if (lane.open) return;
+  const lanes = getLaneDefinitions();
+  lanes.forEach(lane => {
+    if (lane.open) return;
 
-const barrierWidth = 40;
-const barrierHeight = 50;
-  const gap = 4;
+    const barrierWidth = 40;
+    const barrierHeight = 50;
+    const gap = 4;
 
-  if (barrierSpriteLoaded) {
-    ctx.drawImage(barrierSprite, gap, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
-    ctx.drawImage(barrierSprite, WIDTH - gap - barrierWidth, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
-  } else {
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(gap, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
-    ctx.fillRect(WIDTH - gap - barrierWidth, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
-  }
-});
+    if (barrierSpriteLoaded) {
+      ctx.drawImage(barrierSprite, gap, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
+      ctx.drawImage(barrierSprite, WIDTH - gap - barrierWidth, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
+    } else {
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(gap, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
+      ctx.fillRect(WIDTH - gap - barrierWidth, lane.y - barrierHeight / 2, barrierWidth, barrierHeight);
+    }
+  });
 }
 
 function drawPlayer() {
@@ -551,11 +548,12 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("keyup", (event) => {
   keys[event.key] = false;
 });
-startTutorialButton.addEventListener("click", () => showLevelIntro(1));
+
 playButton.addEventListener("click", () => {
   gameState = "tutorial";
   showScreen("tutorial");
 });
+startTutorialButton.addEventListener("click", () => showLevelIntro(1));
 exitButton.addEventListener("click", () => {
   window.close();
   alert("Cierra la pestaña para salir del juego.");
